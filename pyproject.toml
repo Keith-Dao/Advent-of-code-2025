@@ -20,3 +20,8 @@ build-backend = "uv_build"
 dev = [
     "pytest>=9.0.1",
 ]
+
+[tool.ruff.lint]
+extend-select = ["W", "I", "N", "C4", "PT", "RET", "SLF", "SIM", "TC"]
+ignore = ["E741"]
+isort.force-sort-within-sections = true
