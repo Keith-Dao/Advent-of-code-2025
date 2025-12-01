@@ -74,5 +74,4 @@ def get_solver(day: str) -> type[base.Solver]:
 
 def main() -> None:
     args = parse_args()
-    solver = get_solver(args.day)(args.input)
-    solver.solve()
+    get_solver(args.day)(args.input)
