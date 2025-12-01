@@ -2,7 +2,10 @@
 
 import abc
 import inspect
-import pathlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pathlib
 
 
 class Solver(abc.ABC):
