@@ -48,10 +48,7 @@ def parse_args() -> Args:
 
         return f"{x:0>2}"
 
-    parser = argparse.ArgumentParser(
-        description="Advent of code 2025 solver.",
-        usage="%(prog)s <day> [--input INPUT]",
-    )
+    parser = argparse.ArgumentParser(description="Advent of code 2025 solver.")
 
     _ = parser.add_argument(
         "day",
@@ -63,6 +60,7 @@ def parse_args() -> Args:
         "-i",
         type=pathlib.Path,
         help="Path to the input file.",
+        default="input.txt",
     )
 
     args = parser.parse_args()
