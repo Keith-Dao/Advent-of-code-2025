@@ -1,13 +1,22 @@
 """Advent of code 2025 solver CLI."""
 
 import argparse
+import dataclasses
 import importlib
 import pathlib
+from typing import TYPE_CHECKING, cast
 
-from . import base
+if TYPE_CHECKING:
+    from . import base
 
 
-def parse_args() -> argparse.Namespace:
+@dataclasses.dataclass
+class Args:
+    day: str
+    input: pathlib.Path
+
+
+def parse_args() -> Args:
     """Parses the CLI args.
 
     Retruns:
@@ -44,19 +53,23 @@ def parse_args() -> argparse.Namespace:
         usage="%(prog)s <day> [--input INPUT]",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "day",
         type=day,
         help="The day to run the solver for.",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--input",
         "-i",
         type=pathlib.Path,
         help="Path to the input file.",
     )
 
-    return parser.parse_args()
+    args = parser.parse_args()
+    return Args(
+        day=cast("str", args.day),
+        input=cast("pathlib.Path", args.input),
+    )
 
 
 def get_solver(day: str) -> type[base.Solver]:
@@ -69,9 +82,9 @@ def get_solver(day: str) -> type[base.Solver]:
         The solver class.
     """
     module = importlib.import_module(f".day_{day}.solver", __name__)
-    return getattr(module, "Solver")
+    return cast("type[base.Solver]", getattr(module, "Solver"))
 
 
 def main() -> None:
     args = parse_args()
-    get_solver(args.day)(args.input)
+    _ = get_solver(args.day)(args.input)
