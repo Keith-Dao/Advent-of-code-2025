@@ -13,9 +13,7 @@ from .. import base
 class Solver(base.Solver):
     """Day 1 solver."""
 
-    def _parse_input(
-        self, filepath: pathlib.Path
-    ) -> Generator[tuple[int, int], None, None]:
+    def _parse_input(self, filepath: pathlib.Path) -> Generator[tuple[int, int]]:
         """Parses the input.
 
         Args:

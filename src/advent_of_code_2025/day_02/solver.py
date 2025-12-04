@@ -14,9 +14,7 @@ from .. import base
 class Solver(base.Solver):
     """Day 2 solver."""
 
-    def _parse_input(
-        self, filepath: pathlib.Path
-    ) -> Generator[tuple[int, int], None, None]:
+    def _parse_input(self, filepath: pathlib.Path) -> Generator[tuple[int, int]]:
         """Parses the input.
 
         Args:
@@ -56,7 +54,7 @@ class Solver(base.Solver):
 
     def _generate_invalid_nums(
         self, max_num: int, repeat_once: bool = False
-    ) -> Generator[int, None, None]:
+    ) -> Generator[int]:
         """Generates all invalid numbers up to and including the maximum number.
 
         Args:
