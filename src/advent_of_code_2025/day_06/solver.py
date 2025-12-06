@@ -1,10 +1,12 @@
 """Day 6 solver."""
 
+import itertools
 import sys
 from typing import TYPE_CHECKING, override
 
 if TYPE_CHECKING:
     import pathlib
+    from typing import Callable
 
 from .. import base
 
@@ -12,69 +14,101 @@ from .. import base
 class Solver(base.Solver):
     """Day 6 solver."""
 
-    @override
-    def part_1(self, filepath: pathlib.Path) -> int | str:
-        values: list[list[str]] = []
-        with open(filepath, "r", encoding=sys.getdefaultencoding()) as file:
-            for line in file:
-                line = line.strip()
-                values.append(line.split())
+    def _parse_input(
+        self, filepath: pathlib.Path, transpose: bool
+    ) -> tuple[list[list[int]], list[str]]:
+        """Parses the input file into a list of number groups and operators.
 
-        def apply(operation: str, column: int) -> int:
-            result = 1 if operation == "*" else 0
-            for i in range(m - 1):
-                if operation == "*":
-                    result *= int(values[i][column])
-                else:
-                    result += int(values[i][column])
+        Args:
+            filepath: The path to the input file.
+            transpose: If True, transposes the number groups after parsing.
+
+        Returns:
+            A tuple containing:
+                - A list of lists of integers, where each inner list represents a
+                  group of numbers.
+                - A list of strings representing the group's respective operator.
+        """
+        with open(filepath, "r", encoding=sys.getdefaultencoding()) as file:
+            *values, operators = (line.strip("\n") for line in file)
+
+            prev = 0
+            groups: list[list[str]] = []
+            while prev < len(operators):
+                i = prev + 1
+                while i < len(operators) and operators[i] == " ":
+                    i += 1
+
+                # Account for mismatched line lengths
+                slice_range = slice(prev, i - 1 if i < len(operators) else None)
+                groups.append([row[slice_range] for row in values])
+
+                prev = i
+
+            if transpose:
+                groups = [
+                    [
+                        "".join(transposed_group)
+                        for transposed_group in itertools.zip_longest(
+                            *group, fillvalue=" "
+                        )
+                    ]
+                    for group in groups
+                ]
+
+            numbers = [
+                [int("".join(c for c in value if c != " ")) for value in group]
+                for group in groups
+            ]
+            operators = operators.split()
+
+            return numbers, operators
+
+    def _generic_solve(self, filepath: pathlib.Path, transpose: bool) -> int:
+        """Generic solve for both parts.
+
+        Args:
+            filepath: The path to the input file.
+            transpose: If True, the numbers are processed as transposed,
+                       otherwise as untransposed
+
+        Returns:
+            The sum of the results after applying operations to each number group.
+        """
+
+        def apply(numbers: list[int], operator: str) -> int:
+            """Applies the operation to the group.
+
+            Args:
+                numbers: The numbers in the group.
+                operator: The operator type to apply to the group.
+
+            Returns:
+                The result of applying the operation to the group.
+            """
+            operation_map: dict[str, Callable[[int, int], int]] = {
+                "+": lambda x, y: x + y,
+                "*": lambda x, y: x * y,
+            }
+            operation_start: dict[str, int] = {
+                "+": 0,
+                "*": 1,
+            }
+            result = operation_start[operator]
+            operation = operation_map[operator]
+
+            for x in numbers:
+                result = operation(result, x)
 
             return result
 
-        result = 0
-        m = len(values)
-        n = len(values[0])
-        for i in range(n):
-            result += apply(values[m - 1][i], i)
+        numbers, operators = self._parse_input(filepath, transpose=transpose)
+        return sum(apply(*args) for args in zip(numbers, operators))
 
-        return result
+    @override
+    def part_1(self, filepath: pathlib.Path) -> int | str:
+        return self._generic_solve(filepath, transpose=False)
 
     @override
     def part_2(self, filepath: pathlib.Path) -> int | str:
-        with open(filepath, "r", encoding=sys.getdefaultencoding()) as file:
-            lines = [line.strip("\n") for line in file]
-
-        operators = lines[-1]
-        column_ranges: list[tuple[int, int]] = []
-        i = 0
-        while i < len(operators):
-            j = i + 1
-            while j < len(operators) and operators[j] == " ":
-                j += 1
-            column_ranges.append((i, j - (1 if j < len(operators) else 0)))
-            i = j
-
-        m = len(lines) - 1
-        result = 0
-
-        def apply(operation: str, start: int, end: int) -> int:
-            result = 1 if operation == "*" else 0
-
-            for j in range(start, end):
-                num = 0
-                for i in range(m):
-                    if lines[i][j] == " ":
-                        continue
-                    num = num * 10 + int(lines[i][j])
-
-                if operation == "*":
-                    result *= num
-                else:
-                    result += num
-
-            return result
-
-        for start, end in column_ranges:
-            operation_result = apply(operators[start], start, end)
-            result += operation_result
-
-        return result
+        return self._generic_solve(filepath, transpose=True)
