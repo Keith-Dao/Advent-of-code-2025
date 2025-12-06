@@ -10,4 +10,15 @@ from .base_test import BaseTests
 class TestDay6(BaseTests):
     """Tests the day 6 solver."""
 
-    cases = []
+    cases = [
+        (
+            textwrap.dedent("""\
+                123 328  51 64
+                 45 64  387 23
+                  6 98  215 314
+                *   +   *   +
+                """),
+            4277556,
+            3263827,
+        )
+    ]
