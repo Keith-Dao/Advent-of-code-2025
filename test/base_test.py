@@ -2,22 +2,23 @@
 
 import importlib
 import inspect
-import pathlib
 import sys
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, cast
 
 import pytest
 
 if TYPE_CHECKING:
+    import pathlib
+
     from advent_of_code_2025.base import Solver
 
 
 class BaseTests:
     """Base tests"""
 
-    cases: list[tuple[str, int | str | None, int | str | None]]
-    test_args: dict[str, Any] | None
-    ignore_args: tuple[list[str], list[str]]
+    cases: list[tuple[str, int | str | None, int | str | None]] = []
+    test_args: dict[str, object] | None = None
+    ignore_args: tuple[list[str], list[str]] = ([], [])
 
     # === Test cases ===
     def pytest_generate_tests(self, metafunc: pytest.Metafunc):
@@ -56,10 +57,10 @@ class BaseTests:
         Returns:
             Path to the temporary input file.
         """
-        input_data = request.param
+        input_data = cast("str", request.param)
         input_file = tmp_path / "input.txt"
         with open(input_file, "w", encoding=sys.getdefaultencoding()) as file:
-            file.write(input_data)
+            _ = file.write(input_data)
 
         return input_file
 
@@ -71,10 +72,11 @@ class BaseTests:
             The solver for the day to be tested.
         """
         test_module = inspect.getmodule(self)
+        assert test_module is not None
         day = test_module.__name__[-2:]
 
         module = importlib.import_module(f"advent_of_code_2025.day_{day}.solver")
-        solver = getattr(module, "Solver")
+        solver = cast("type[Solver]", getattr(module, "Solver"))
 
         return solver()
 
@@ -87,9 +89,9 @@ class BaseTests:
         part: int,
     ):
         """Tests a part of the solver."""
-        test_args = getattr(self, "test_args", {})
-        ignore_args = getattr(self, "ignore_args", ([], []))[part - 1]
+        test_args = self.test_args or {}
+        ignore_args = (self.ignore_args or ([], []))[part - 1]
         for ignore_arg in ignore_args:
-            test_args.pop(ignore_arg)
+            _ = test_args.pop(ignore_arg)
 
         assert getattr(solver, f"part_{part}")(input_file, **test_args) == solution
