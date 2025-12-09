@@ -16,6 +16,24 @@ from .. import base
 class Solver(base.Solver):
     """Day 9 solver."""
 
+    def _parse_input(self, filepath: pathlib.Path) -> list[Point]:
+        """Parses the input file.
+
+        Args:
+            filepath: The input filepath.
+
+        Returns:
+            The points in the input.
+        """
+        points: list[Point] = []
+        with open(filepath, "r", encoding=sys.getdefaultencoding()) as file:
+            for line in file:
+                line = line.strip()
+                x, y = line.split(",")
+                points.append((int(x), int(y)))
+
+        return points
+
     def _area(self, /, a: Point, b: Point) -> int:
         """Calculates the area for the rectangle.
 
@@ -70,12 +88,7 @@ class Solver(base.Solver):
 
     @override
     def part_1(self, filepath: pathlib.Path) -> int | str:
-        points: list[Point] = []
-        with open(filepath, "r", encoding=sys.getdefaultencoding()) as file:
-            for line in file:
-                line = line.strip()
-                x, y = line.split(",")
-                points.append((int(x), int(y)))
+        points = self._parse_input(filepath)
 
         return max(
             self._area(points[i], points[j])
@@ -85,12 +98,7 @@ class Solver(base.Solver):
 
     @override
     def part_2(self, filepath: pathlib.Path) -> int | str:
-        points: list[Point] = []
-        with open(filepath, "r", encoding=sys.getdefaultencoding()) as file:
-            for line in file:
-                line = line.strip()
-                x, y = line.split(",")
-                points.append((int(x), int(y)))
+        points = self._parse_input(filepath)
 
         lines: tuple[list[Line], list[Line]] = [], []
         for i in range(len(points)):
