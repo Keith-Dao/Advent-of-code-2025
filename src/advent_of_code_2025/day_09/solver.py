@@ -64,9 +64,17 @@ class Solver(base.Solver):
                 x, y = line.split(",")
                 points.append((int(x), int(y)))
 
-        return max(
-            self._area(points[i], points[j])
-            for i in range(len(points))
-            for j in range(i)
-            if self._is_valid(points, i, j)
+        areas = sorted(
+            (
+                (self._area(points[i], points[j]), i, j)
+                for i in range(len(points))
+                for j in range(i)
+            ),
+            reverse=True,
         )
+
+        for area, i, j in areas:
+            if self._is_valid(points, i, j):
+                return area
+
+        return 0
