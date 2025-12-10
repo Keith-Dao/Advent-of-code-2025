@@ -7,7 +7,9 @@ authors = [
     { name = "Keith Dao", email = "keith.dao.248@gmail.com" }
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "scipy>=1.16.3",
+]
 
 [project.scripts]
 solver = "advent_of_code_2025:main"
@@ -19,6 +21,7 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "pytest>=9.0.1",
+    "scipy-stubs>=1.16.3.3",
 ]
 
 [tool.ruff.lint]
