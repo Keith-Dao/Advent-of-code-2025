@@ -7,7 +7,9 @@ authors = [
     { name = "Keith Dao", email = "keith.dao.248@gmail.com" }
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "z3-solver>=4.15.4.0",
+]
 
 [project.scripts]
 solver = "advent_of_code_2025:main"
