@@ -2,12 +2,13 @@
 
 import collections
 import sys
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, cast, override
 
-import z3
+import scipy.optimize
 
 if TYPE_CHECKING:
     import pathlib
+    from typing import Literal
 
 
 from .. import base
@@ -16,27 +17,65 @@ from .. import base
 class Solver(base.Solver):
     """Day 10 solver."""
 
+    def _parse_line(self, line: str) -> tuple[int, list[set[int]], list[int]]:
+        """Parses the input line.
+
+        Args:
+            line: The input line.
+
+        Returns:
+            A tuple with:
+                - The binary mask of the indicator lights.
+                    Each bit represents whether a light is on (1)
+                        or off (0).
+                    The bits are read right to left.
+                - The buttons with each set representing
+                    the set of indices it toggles..
+                - The target values for the position counter.
+        """
+        line = line.strip()
+        indicator, *buttons, counter = line.split()
+
+        indicator_state = 0
+        for i, c in enumerate(indicator[1:-1]):
+            if c == ".":
+                continue
+
+            indicator_state |= 1 << i
+
+        buttons = [{int(x) for x in button[1:-1].split(",")} for button in buttons]
+
+        counter = [int(x) for x in counter[1:-1].split(",")]
+
+        return indicator_state, buttons, counter
+
     @override
     def part_1(self, filepath: pathlib.Path) -> int | str:
         def solve(line: str) -> int:
-            line = line.strip()
-            target, *buttons, _ = line.split()
+            """Gets the minimum number of button presses
+            to reach the desired state in the input line.
 
-            target_state = 0
-            for i, c in enumerate(target[1:-1]):
-                if c == ".":
-                    continue
+            Args:
+                line: The input line.
 
-                target_state |= 1 << i
+            Returns:
+                The minimum number of button presses to
+                reach the desired state.
+            """
+            target, buttons, _ = self._parse_line(line)
 
             toggles: set[int] = set()
             for button in buttons:
-                state = 0
-                for c in button[1:-1].split(","):
-                    state ^= 1 << int(c)
-                toggles.add(state)
+                toggle = 0
+                for i in button:
+                    toggle ^= 1 << i
 
-            visited = {0}
+                toggles.add(toggle)
+
+            num_bits = max(max(button) for button in buttons) + 1
+
+            visited = [False] * (1 << num_bits)
+            visited[0] = True
             queue = collections.deque([0])
             depth = 1
             while queue:
@@ -45,13 +84,13 @@ class Solver(base.Solver):
 
                     for toggle in toggles:
                         next_state = state ^ toggle
-                        if next_state == target_state:
+                        if next_state == target:
                             return depth
 
-                        if next_state in visited:
+                        if visited[next_state]:
                             continue
 
-                        visited.add(next_state)
+                        visited[next_state] = True
                         queue.append(next_state)
 
                 depth += 1
@@ -64,32 +103,33 @@ class Solver(base.Solver):
     @override
     def part_2(self, filepath: pathlib.Path) -> int | str:
         def solve(line: str) -> int:
-            line = line.strip()
-            _, *buttons, target = line.split()
+            """Gets the minimum number of button presses
+            to reach the desired counts in the input line.
 
-            buttons = [{int(x) for x in button[1:-1].split(",")} for button in buttons]
+            Args:
+                line: The input line.
 
-            start_state = tuple(int(x) for x in target[1:-1].split(","))
+            Returns:
+                The minimum number of button presses to
+                reach the desired counts.
+            """
+            _, buttons, target = self._parse_line(line)
 
-            solver = z3.Optimize()
-            button_vars = [z3.Int(f"b_{i}") for i in range(len(buttons))]
-
-            button_presses = [
-                [button_vars[i] for i, button in enumerate(buttons) if j in button]
-                for j in range(len(start_state))
+            weights: list[Literal[1]] = [1] * len(buttons)
+            variable_type: list[Literal[1]] = [1] * len(buttons)
+            button_matrix = [
+                [i in button for button in buttons] for i in range(len(target))
             ]
-            for button_var in button_vars:
-                solver.add(button_var >= 0)
-
-            for press, expected in zip(button_presses, start_state):
-                solver.add(sum(press) == expected)
-
-            solver.minimize(sum(button_vars))
-
-            solver.check()
-            model = solver.model()
-            values = [model[button_var].as_long() for button_var in button_vars]
-            return sum(values)
+            milp_result: scipy.optimize.OptimizeResult = scipy.optimize.milp(
+                weights,
+                integrality=variable_type,
+                constraints=(
+                    scipy.optimize.LinearConstraint(
+                        button_matrix, lb=target, ub=target
+                    ),
+                ),
+            )
+            return int(cast("float", milp_result.fun))
 
         with open(filepath, "r", encoding=sys.getdefaultencoding()) as file:
             return sum(solve(line) for line in file)
