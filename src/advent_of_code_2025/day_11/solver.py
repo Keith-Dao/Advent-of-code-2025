@@ -1,10 +1,11 @@
 """Day 11 solver."""
 
-import functools
+import collections
 import sys
 from typing import TYPE_CHECKING, override
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
     import pathlib
 
 from .. import base
@@ -13,15 +14,28 @@ from .. import base
 class Solver(base.Solver):
     """Day 11 solver."""
 
-    @override
-    def part_1(self, filepath: pathlib.Path) -> int | str:
-        graph: dict[str, list[str]] = {}
+    def _get_source_and_destinations(
+        self, filepath: pathlib.Path
+    ) -> Generator[tuple[str, list[str]]]:
+        """Parses the input yielding the source and destinations from
+        each input line.
+
+        Args:
+            filepath: The input filepath.
+
+        Yields:
+            A tuple with:
+                - The source node.
+                - The list of destination nodes.
+        """
         with open(filepath, "r", encoding=sys.getdefaultencoding()) as file:
             for line in file:
                 source, destinations = line.strip().split(": ")
-                graph[source] = []
-                for destination in destinations.split():
-                    graph[source].append(destination)
+                yield source, destinations.split()
+
+    @override
+    def part_1(self, filepath: pathlib.Path) -> int | str:
+        graph: dict[str, list[str]] = dict(self._get_source_and_destinations(filepath))
 
         result = 0
         stack = ["you"]
@@ -38,29 +52,37 @@ class Solver(base.Solver):
 
     @override
     def part_2(self, filepath: pathlib.Path) -> int | str:
-        graph: dict[str, list[str]] = {}
-        with open(filepath, "r", encoding=sys.getdefaultencoding()) as file:
-            for line in file:
-                source, destinations = line.strip().split(": ")
-                graph[source] = []
-                for destination in destinations.split():
-                    graph[source].append(destination)
+        nodes: list[str] = ["out"]
+        graph: dict[str, list[str]] = collections.defaultdict(list)
+        degrees: dict[str, int] = collections.Counter()
+        for source, destinations in self._get_source_and_destinations(filepath):
+            nodes.append(source)
+            for destination in destinations:
+                graph[destination].append(source)
+                degrees[source] += 1
 
-        @functools.cache
-        def dfs(node: str, state: int) -> int:
-            if node == "out":
-                return int(state == 0b11)
+        node_to_index = {node: i for i, node in enumerate(nodes)}
+        dp = [[0] * 4 for _ in range(len(nodes))]
+        dp[node_to_index["out"]][0b11] = 1
+        stack = ["out"]
 
-            result = 0
-            for next_node in graph[node]:
-                next_state = state
-                if next_node == "dac":
-                    next_state |= 1
-                if next_node == "fft":
-                    next_state |= 1 << 1
+        while stack:
+            node = stack.pop()
+            for prev_node in graph[node]:
+                if prev_node == "dac":
+                    mask = 1
+                elif prev_node == "fft":
+                    mask = 1 << 1
+                else:
+                    mask = 0
 
-                result += dfs(next_node, next_state)
+                for state in range(4):
+                    dp[node_to_index[prev_node]][state] += dp[node_to_index[node]][
+                        state | mask
+                    ]
 
-            return result
+                degrees[prev_node] -= 1
+                if degrees[prev_node] == 0:
+                    stack.append(prev_node)
 
-        return dfs("svr", 0)
+        return dp[node_to_index["svr"]][0]
