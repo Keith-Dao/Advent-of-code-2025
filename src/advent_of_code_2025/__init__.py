@@ -36,14 +36,14 @@ def parse_args() -> Args:
             A two-character string of the validated day.
         Raises:
             argparse.ArgumentTypeError: If the input day is not a number
-                or not in [1, 25].
+                or not in [1, 12].
         """
         if not x.isnumeric():
             raise argparse.ArgumentTypeError(f"The day must be a number. Got: {x}")
 
-        if not 1 <= int(x) <= 25:
+        if not 1 <= int(x) <= 12:
             raise argparse.ArgumentTypeError(
-                f"The day must be a number within the range [1, 25]. Got: {x}"
+                f"The day must be a number within the range [1, 12]. Got: {x}"
             )
 
         return f"{x:0>2}"
