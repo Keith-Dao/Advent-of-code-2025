@@ -1,6 +1,5 @@
 """Tests day 12 solver."""
 
-import textwrap
 from typing import final
 
 from .base_test import BaseTests
